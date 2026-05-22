@@ -61,38 +61,110 @@ def get_user_by_username(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
 
 
+
+# Create logger for this file
+logger = logging.getLogger(__name__)
+
 def create_user(db: Session, user: UserCreate):
     """
-    Create user with secure password hashing.
+    Create a new user account.
+
+    Security features:
+    - Unique username validation
+    - Secure bcrypt password hashing
+    - Password length enforcement
     """
 
-    # Ensure username is unique
-    if get_user_by_username(db, user.username):
-        raise HTTPException(400, "Username already registered")
+    # -------------------------------
+    # CHECK IF USERNAME ALREADY EXISTS
+    # -------------------------------
+    existing_user = get_user_by_username(db, user.username)
 
-    # Enforce bcrypt max length (important security constraint)
+    if existing_user:
+        logger.warning(f"Username already exists: {user.username}")
+
+        raise HTTPException(
+            status_code=400,
+            detail="Username already registered"
+        )
+
+    # ---------------------------------------
+    # BCRYPT ONLY SUPPORTS 72-BYTE PASSWORDS
+    # ---------------------------------------
     if len(user.password.encode("utf-8")) > 72:
-        raise HTTPException(400, "Password too long")
+
+        logger.warning("Password exceeds bcrypt limit")
+
+        raise HTTPException(
+            status_code=400,
+            detail="Password too long"
+        )
 
     try:
+        # -------------------------------
+        # HASH PASSWORD SECURELY
+        # -------------------------------
         hashed_password = pwd_context.hash(user.password)
-    except PasswordTruncateError:
-        raise HTTPException(400, "Password exceeds bcrypt limit")
-    except Exception:
-        raise HTTPException(500, "Failed to hash password")
 
-    db_user = User(
-        username=user.username,
-        full_name=user.full_name,
-        hashed_password=hashed_password,
-    )
+        logger.info(f"Password hashed successfully for {user.username}")
 
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    except PasswordTruncateError as e:
 
-    return db_user
+        logger.error(f"Password truncate error: {str(e)}")
 
+        raise HTTPException(
+            status_code=400,
+            detail="Password exceeds bcrypt limit"
+        )
+
+    except Exception as e:
+        """
+        THIS IS CRITICAL.
+
+        We now log the REAL exception so Render logs
+        will show the actual issue.
+        """
+
+        logger.exception("Unexpected hashing error")
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Hashing error: {str(e)}"
+        )
+
+    try:
+        # -------------------------------
+        # CREATE DATABASE USER OBJECT
+        # -------------------------------
+        db_user = User(
+            username=user.username,
+            full_name=user.full_name,
+            hashed_password=hashed_password,
+        )
+
+        db.add(db_user)
+
+        # Save to database
+        db.commit()
+
+        # Refresh instance from DB
+        db.refresh(db_user)
+
+        logger.info(f"User created successfully: {user.username}")
+
+        return db_user
+
+    except Exception as e:
+
+        # Roll back failed transaction
+        db.rollback()
+
+        logger.exception("Database error during user creation")
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
