@@ -22,3 +22,11 @@
 2026-05-20 11:45:22,601 | INFO | crud | create_transaction | SUCCESS tx | id=31
 2026-05-20 13:26:16,967 | INFO | crud | transfer_money | SUCCESS transfer
 2026-05-20 20:53:20,396 | INFO | main | lifespan | Bank API shutting down
+2026-05-22 21:52:03,858 | INFO | main | lifespan | Bank API starting up
+2026-05-22 21:53:14,885 | INFO | crud | create_user | Password hashed successfully for firdaous
+2026-05-22 21:53:15,138 | INFO | crud | create_user | User created successfully: firdaous
+2026-05-22 21:59:40,378 | INFO | main | lifespan | Bank API shutting down
+2026-05-22 22:01:32,188 | INFO | main | lifespan | Bank API starting up
+2026-05-22 22:03:46,496 | INFO | crud | create_user | Password hashed successfully for cocomelon
+2026-05-22 22:03:46,529 | INFO | crud | create_user | User created successfully: cocomelon
+2026-05-22 22:04:11,144 | INFO | main | lifespan | Bank API shutting down

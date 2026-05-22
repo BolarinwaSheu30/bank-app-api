@@ -1,9 +1,8 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from passlib.context import CryptContext
 from passlib.exc import PasswordTruncateError
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime
 import json, hashlib, random, logging
 
@@ -18,7 +17,13 @@ logger = logging.getLogger(__name__)
 # =========================================================
 # SECURITY CONFIG
 # =========================================================
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Configure secure password hashing
+# bcrypt__rounds controls hashing strength
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12
+)
 
 # =========================================================
 # HELPER FUNCTIONS (DEDUPLICATED & STANDARDIZED)
@@ -27,7 +32,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def generate_account_number():
     """
     Generate a random 10-digit account number.
-    NOTE: Should ideally be UNIQUE at DB level.
     """
     return str(random.randint(1000000000, 9999999999))
 
@@ -61,9 +65,6 @@ def get_user_by_username(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
 
 
-
-# Create logger for this file
-logger = logging.getLogger(__name__)
 
 def create_user(db: Session, user: UserCreate):
     """
@@ -390,15 +391,30 @@ def create_transaction(
         raise HTTPException(400, str(e))
 
     except Exception as e:
-        db.rollback()
+    # Roll back failed DB transaction
+     db.rollback()
 
-        logger.error(f"ERROR tx | {e}")
+    # Log FULL traceback (VERY IMPORTANT)
+    # logger.exception gives detailed stack trace
+    logger.exception("Unexpected transaction error")
 
-        create_audit_log(db, user_id, "create_transaction", "transaction", "failed", "internal error")
-        db.commit()
+    # Save failure in audit logs
+    create_audit_log(
+        db,
+        user_id,
+        "create_transaction",
+        "transaction",
+        "failed",
+        "internal error"
+    )
 
-        raise HTTPException(500, "Internal server error")
+    db.commit()
 
+    # Return safe generic error to client
+    raise HTTPException(
+        status_code=500,
+        detail="Internal server error"
+    )
 
 # =========================================================
 # TRANSACTION QUERIES
@@ -515,11 +531,26 @@ def transfer_money(db: Session, transfer: TransferCreate):
         raise HTTPException(400, str(e))
 
     except Exception as e:
+    # Roll back failed DB transaction
         db.rollback()
 
-        logger.error(f"ERROR transfer | {e}")
+    # Log full traceback for debugging
+    logger.exception("Unexpected transfer error")
 
-        create_audit_log(db, None, "transfer", "transaction", "failed", "internal error")
-        db.commit()
+    # Save audit failure log
+    create_audit_log(
+        db,
+        None,
+        "transfer",
+        "transaction",
+        "failed",
+        "internal error"
+    )
 
-        raise HTTPException(500, "Internal server error")
+    db.commit()
+
+    # Return safe generic error
+    raise HTTPException(
+        status_code=500,
+        detail="Internal server error"
+    )
