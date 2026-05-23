@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
 # Import our database models and routers
 # We import Base so we can create tables (only for development)
-from database import engine
-from models import Base
+from database import engine, get_db
+from models import Base, Account
 from logging_config import setup_logging
 import logging
 logger = logging.getLogger(__name__)
@@ -82,4 +83,14 @@ def read_root():
         "status": "online",
         "version": "0.1.0",
         "docs": "/docs"
+    }
+
+@app.get("/test-account")
+def test_account(db: Session = Depends(get_db)):
+
+    account = db.query(Account).first()
+
+    return {
+        "has_account_number": hasattr(account, "account_number"),
+        "account_data": account.__dict__ if account else "No account"
     }

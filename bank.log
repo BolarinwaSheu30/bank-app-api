@@ -30,3 +30,7 @@
 2026-05-22 22:03:46,496 | INFO | crud | create_user | Password hashed successfully for cocomelon
 2026-05-22 22:03:46,529 | INFO | crud | create_user | User created successfully: cocomelon
 2026-05-22 22:04:11,144 | INFO | main | lifespan | Bank API shutting down
+2026-05-23 17:23:15,931 | INFO | main | lifespan | Bank API starting up
+2026-05-23 17:25:10,806 | INFO | crud | create_user | Password hashed successfully for nomba
+2026-05-23 17:25:10,832 | INFO | crud | create_user | User created successfully: nomba
+2026-05-23 17:33:34,462 | INFO | main | lifespan | Bank API shutting down
