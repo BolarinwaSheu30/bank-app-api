@@ -24,16 +24,25 @@ if DATABASE_URL.startswith("postgres://"):
 # SQLite needs this argument to work with FastAPI's multiple threads
 connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 
+# Create SQLAlchemy engine
+engine = create_engine(
+
+    # Database connection URL
+    DATABASE_URL,
+
+    # Needed for SQLite only
+    connect_args=connect_args,
+
+    # Automatically checks if DB connection is alive
+    # before using it again
+    pool_pre_ping=True,
+
+    # Recycles old/stale connections
+    # Helps prevent SSL disconnection issues on cloud DBs
+    pool_recycle=300,
+)
 
 # Create the SQLAlchemy engine (the core connection to the database)
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-    # These settings become very important when we switch to PostgreSQL:
-    # pool_size=20,
-    # max_overflow=10,
-    # pool_pre_ping=True,
-)
 
 
 # Create a session factory

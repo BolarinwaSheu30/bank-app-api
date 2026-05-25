@@ -34,3 +34,5 @@
 2026-05-23 17:25:10,806 | INFO | crud | create_user | Password hashed successfully for nomba
 2026-05-23 17:25:10,832 | INFO | crud | create_user | User created successfully: nomba
 2026-05-23 17:33:34,462 | INFO | main | lifespan | Bank API shutting down
+2026-05-23 17:42:26,753 | INFO | main | lifespan | Bank API starting up
+2026-05-23 17:45:20,248 | INFO | main | lifespan | Bank API shutting down
